@@ -2,16 +2,12 @@ package com.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-@Component("regionalTieredTaxStrategy")
 public class RegionalTieredTaxStrategy implements TaxCalculationStrategy {
   private final BigDecimal regionalRate;
 
-  // Dynamically injected based on active operational profile or properties
-  public RegionalTieredTaxStrategy(@Value("${tax.rate.regional:0.0825}") String regionalRate) {
-    this.regionalRate = new BigDecimal(regionalRate);
+  public RegionalTieredTaxStrategy(BigDecimal regionalRate) {
+    this.regionalRate = regionalRate != null ? regionalRate : new BigDecimal("0.0825"); // 8.25% baseline fallback
   }
 
   @Override
