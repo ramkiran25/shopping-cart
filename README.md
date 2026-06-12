@@ -1,6 +1,6 @@
 # Stateful Shopping Cart Subsystem
 
-A stateful shopping cart implementation built using **Java 17** and **Spring Boot**.
+A stateful shopping cart implementation built using **Java 17**
 
 The application allows products to be added to a shopping cart, retrieves product pricing from the provided Price API, and calculates the cart subtotal, tax, and total using precise monetary calculations based on `BigDecimal`.
 
@@ -65,8 +65,6 @@ Implemented as Java Records to provide immutable representations of:
 ### BigDecimal for Monetary Calculations
 
 All monetary values are represented using `BigDecimal` to avoid floating-point precision issues and ensure accurate financial calculations.
-
-### Dependency Inversion
 
 The shopping cart depends on the `PriceApiGateway` abstraction rather than a concrete HTTP client implementation. This improves testability and separation of concerns.
 
