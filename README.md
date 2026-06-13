@@ -66,8 +66,6 @@ Implemented as Java Records to provide immutable representations of:
 
 All monetary values are represented using `BigDecimal` to avoid floating-point precision issues and ensure accurate financial calculations.
 
-### Dependency Inversion
-
 The shopping cart depends on the `PriceApiGateway` abstraction rather than a concrete HTTP client implementation. This improves testability and separation of concerns.
 
 ### Immutable State
@@ -108,3 +106,7 @@ mvn test
 - Monetary values are rounded to two decimal places using `RoundingMode.HALF_UP`.
 
 ---
+
+## Class Diagram
+
+<img width="760" height="396" alt="image" src="https://github.com/user-attachments/assets/2f3f3687-4042-4d1b-8ae8-6aac87af2542" />
