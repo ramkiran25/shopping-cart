@@ -1,0 +1,55 @@
+openapi: 3.0.3
+info:
+  title: Stateful Shopping Cart API (Plain Java Engine)
+  version: 1.0.0
+  description: Core domain engine built with pure Java 17+, documentable via standard OpenAPI contracts.
+
+
+servers:
+  - url: http://localhost:8080/api/v1
+
+paths:
+  
+  /cart/{cartId}/items:
+    post:
+      summary: Add a product to the cart
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: productName
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: quantity
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Product added successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+
+  /cart/{cartId}:
+    get:
+      summary: Retrieve compiled cart summary
+      parameters:
+        - name: cartId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cart snapshot state compiled
+          content:
+            application/json:
+              schema:
+                type: object

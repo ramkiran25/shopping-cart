@@ -24,7 +24,7 @@ public class ShoppingCart {
     this.taxStrategy = taxStrategy;
   }
 
-  public void addProduct(String productName, int quantity) {
+  public synchronized void addProduct(String productName, int quantity) {
     if (productName == null || productName.isBlank()) {
       throw new IllegalArgumentException("Product name cannot be empty.");
     }
@@ -36,7 +36,7 @@ public class ShoppingCart {
     itemQuantities.put(normalizedName, itemQuantities.getOrDefault(normalizedName, 0) + quantity);
   }
 
-  public CartState getState() {
+  public synchronized CartState getState() {
     // Pass 1: Hydrate item prices and map to CartItem domain models
     List<CartItem> itemsList = itemQuantities.entrySet().stream()
         .map(entry -> createCartItem(entry.getKey(), entry.getValue())).toList(); // Simplified Java
