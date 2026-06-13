@@ -3,6 +3,15 @@ package com.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
+/*
+ * Applies an immutable, predictable baseline percentage across the entire subtotal volume.
+ * 
+ * Primary Use Case: Default corporate or domestic tax rates.
+ * 
+ * Fallback Default: 12.5%( 0.125)
+ * 
+ * Constructor Injection:
+ */
 public class FlatRateTaxStrategy implements TaxCalculationStrategy {
 
   private final BigDecimal taxRate;

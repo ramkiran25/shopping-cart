@@ -9,6 +9,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+/*
+ * This Class manages remote token resolution without external serialization libraries (like Jackson or
+ * Gson) to keep the repository tight, lightweight, and completely framework-independent.
+ */
 public class HttpPriceApiGateway implements PriceApiGateway {
 
   private final HttpClient httpClient;
@@ -26,14 +30,13 @@ public class HttpPriceApiGateway implements PriceApiGateway {
   public Optional<BigDecimal> fetchPrice(String productName) {
     String sanitizedName = productName.trim().toLowerCase();
     try {
-      String targetUrl = String.format("%s/backend-take-home-test-data/%s.json", baseUrl, sanitizedName);
-      
-      HttpRequest request = HttpRequest.newBuilder()
-          .uri(URI.create(targetUrl))
-          .GET()
-          .build();
+      String targetUrl =
+          String.format("%s/backend-take-home-test-data/%s.json", baseUrl, sanitizedName);
 
-      HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+      HttpRequest request = HttpRequest.newBuilder().uri(URI.create(targetUrl)).GET().build();
+
+      HttpResponse<String> response =
+          httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
       if (response.statusCode() == 200) {
         BigDecimal price = parsePriceFromJson(response.body());
@@ -48,7 +51,8 @@ public class HttpPriceApiGateway implements PriceApiGateway {
 
   // Light, self-contained JSON extraction to stay fully framework-independent
   private BigDecimal parsePriceFromJson(String json) {
-    if (json == null || !json.contains("\"price\"")) return null;
+    if (json == null || !json.contains("\"price\""))
+      return null;
     String clean = json.replaceAll("\\s", "");
     String priceSegment = clean.substring(clean.indexOf("\"price\":") + 8);
     String priceValue = priceSegment.split("[,}]")[0];
