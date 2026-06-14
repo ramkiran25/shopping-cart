@@ -2,6 +2,8 @@ package com;
 
 import java.math.BigDecimal;
 import java.net.http.HttpClient;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import com.api.HttpPriceApiGateway;
 import com.api.PriceApiGateway;
 import com.model.CartState;
@@ -9,9 +11,11 @@ import com.service.FlatRateTaxStrategy;
 import com.service.ShoppingCart;
 import com.service.TaxCalculationStrategy;
 
+@SpringBootApplication
 public class ShoppingCartApplication {
 
   public static void main(String[] args) {
+    SpringApplication.run(ShoppingCartApplication.class, args);
     // 1. Setup pure dependencies
     HttpClient httpClient = HttpClient.newHttpClient();
     PriceApiGateway priceGateway =

@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import com.api.PriceApiGateway;
+import com.exception.InvalidProductException;
 import com.model.CartItem;
 import com.model.CartState;
 
@@ -57,8 +58,9 @@ public class ShoppingCart {
 
   // Private helper method to drastically clean up the stream readability
   private CartItem createCartItem(String name, int quantity) {
-    BigDecimal price = priceApiGateway.fetchPrice(name)
-        .orElseThrow(() -> new IllegalStateException("Price lookup failed for product: " + name));
+    BigDecimal price =
+        priceApiGateway.fetchPrice(name).orElseThrow(() -> new InvalidProductException(
+            "Cannot compute cart state. Invalid or unrecognized product:" + name));
     return new CartItem(name, quantity, price);
   }
 }

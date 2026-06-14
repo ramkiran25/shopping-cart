@@ -8,10 +8,11 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import com.exception.InvalidProductException;
 
 /*
- * This Class manages remote token resolution without external serialization libraries (like Jackson or
- * Gson) to keep the repository tight, lightweight, and completely framework-independent.
+ * This Class manages remote token resolution without external serialization libraries (like Jackson
+ * or Gson) to keep the repository tight, lightweight, and completely framework-independent.
  */
 public class HttpPriceApiGateway implements PriceApiGateway {
 
@@ -29,6 +30,7 @@ public class HttpPriceApiGateway implements PriceApiGateway {
   @Override
   public Optional<BigDecimal> fetchPrice(String productName) {
     String sanitizedName = productName.trim().toLowerCase();
+
     try {
       String targetUrl =
           String.format("%s/backend-take-home-test-data/%s.json", baseUrl, sanitizedName);
@@ -42,10 +44,22 @@ public class HttpPriceApiGateway implements PriceApiGateway {
         BigDecimal price = parsePriceFromJson(response.body());
         return Optional.ofNullable(price);
       }
-      return Optional.ofNullable(offlineFallbackCache.get(sanitizedName));
-    } catch (Exception e) {
-      // Graceful fallback to local cache on network/parsing faults
-      return Optional.ofNullable(offlineFallbackCache.get(sanitizedName));
+      BigDecimal fallBack = offlineFallbackCache.get(sanitizedName);
+      if (fallBack == null) {
+        throw new InvalidProductException(
+            "Product catalog lookup failed. Item unknown: " + sanitizedName);
+      }
+      return Optional.ofNullable(fallBack);
+    } catch (InvalidProductException e) {
+      throw e;// Pass up custom validation errors unmodified
+    } catch (Exception ex) {
+      // General network/parsing faults fallback to local cache
+      BigDecimal fallback = offlineFallbackCache.get(sanitizedName);
+      if (fallback == null) {
+        throw new InvalidProductException(
+            "Network failure and no offline cache available for: " + sanitizedName);
+      }
+      return Optional.of(fallback);
     }
   }
 
