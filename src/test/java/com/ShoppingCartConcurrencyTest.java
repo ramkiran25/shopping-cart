@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -13,20 +13,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.service.ShoppingCart;
-import com.service.FlatRateTaxStrategy;
-import com.api.PriceApiGateway;
 import com.model.CartState;
+import com.service.ShoppingCart;
 
 public class ShoppingCartConcurrencyTest {
-
-  // Aligned mock gateway to cleanly implement the exact Optional production contract
-  private static class MockPriceGateway implements PriceApiGateway {
-    @Override
-    public Optional<BigDecimal> fetchPrice(String productName) {
-      return Optional.of(new BigDecimal("10.00")); // Every item costs 10.00 base price
-    }
-  }
 
   @DisplayName("High-Scale Concurrency Validation — Race Condition Protection on Single Cart")
   @Test
@@ -34,10 +24,8 @@ public class ShoppingCartConcurrencyTest {
     int requestCount = 100;
     int itemsPerRequest = 2;
 
-    // Setup shared single cart instance with a 12.5% tax strategy
-    PriceApiGateway mockGateway = new MockPriceGateway();
-    ShoppingCart sharedCart =
-        new ShoppingCart(mockGateway, new FlatRateTaxStrategy(new BigDecimal("0.125")));
+    // Setup shared single cart instance
+    ShoppingCart sharedCart = new ShoppingCart();
 
     ExecutorService executor = Executors.newFixedThreadPool(16);
     CountDownLatch readyLatch = new CountDownLatch(requestCount);
@@ -53,7 +41,7 @@ public class ShoppingCartConcurrencyTest {
           // Block until the master gate opens to force simultaneous execution threads
           startLatch.await();
 
-          // Simulating an incoming asynchronous API thread adding items to the same cart
+          // Simulating simultaneous API requests updating the same cart session
           sharedCart.addProduct("cheerios", itemsPerRequest);
 
         } catch (Exception e) {
@@ -81,14 +69,12 @@ public class ShoppingCartConcurrencyTest {
 
     // Calculations verification:
     // Total items expected = 100 requests * 2 items = 200 items.
-    // Base subtotal = 200 items * 10.00 = 2000.00
-    // Expected total quantities must be exactly right if no updates were dropped!
-    CartState finalizedState = sharedCart.getState();
+    Map<String, BigDecimal> standardPriceMap = Map.of("cheerios", new BigDecimal("10.00"));
+    CartState finalizedState = sharedCart.calculateState(standardPriceMap);
 
     System.out.println("Finalized Subtotal calculated: " + finalizedState.subtotal());
 
-    // Validation Check: If addProduct() isn't synchronized, this assertion will catch the race
-    // condition drop.
+    // Validation Check: If addProduct() isn't synchronized properly, this assertion will fail.
     assertEquals(new BigDecimal("2000.00"), finalizedState.subtotal(),
         "Race condition detected! The cart dropped item quantity updates under heavy concurrent load.");
   }

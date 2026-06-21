@@ -3,51 +3,41 @@ package com;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.when;
+
 import java.math.BigDecimal;
-import java.util.Optional;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import com.api.PriceApiGateway;
-import com.exception.InvalidProductException;
+
 import com.model.CartState;
 import com.service.ShoppingCart;
-import com.service.TaxCalculationStrategy;
 
-@ExtendWith(MockitoExtension.class)
 public class ShoppingCartTest {
-
-  @Mock
-  private PriceApiGateway priceApiGateway;
-
-  @Mock
-  private TaxCalculationStrategy taxStrategy;
 
   private ShoppingCart shoppingCart;
 
   @BeforeEach
   void setUp() {
-    shoppingCart = new ShoppingCart(priceApiGateway, taxStrategy);
+    shoppingCart = new ShoppingCart();
   }
 
   @Test
-  @DisplayName("Should successfully add a normalized product name and maintain state layout")
+  @DisplayName("Should successfully add a normalized product name and compute correct math state")
   void shouldNormalizeAndAddProduct() {
     // Arrange
-    when(priceApiGateway.fetchPrice("cheerios")).thenReturn(Optional.of(new BigDecimal("2.52")));
-    when(taxStrategy.calculateTax(any(BigDecimal.class))).thenReturn(BigDecimal.ZERO);
+    shoppingCart.addProduct("  ChEeRiOs  ", 2);
+    Map<String, BigDecimal> priceMap = Map.of("cheerios", new BigDecimal("2.52"));
 
     // Act
-    shoppingCart.addProduct("  ChEeRiOs  ", 2);
-    CartState state = shoppingCart.getState();
+    CartState state = shoppingCart.calculateState(priceMap);
 
     // Assert
     assertEquals("cheerios", state.items().get(0).productName());
     assertEquals(2, state.items().get(0).quantity());
+    assertEquals(new BigDecimal("5.04"), state.subtotal());
+    assertEquals(new BigDecimal("0.63"), state.tax()); // 12.5% of 5.04 rounded HALF_UP
+    assertEquals(new BigDecimal("5.67"), state.total());
   }
 
   @Test
@@ -66,39 +56,32 @@ public class ShoppingCartTest {
   }
 
   @Test
-  @DisplayName("Should throw InvalidProductException when price gateway lookup fails")
+  @DisplayName("Should throw IllegalStateException when a required price definition is missing from the hydrator map")
   void shouldThrowExceptionWhenPriceNotFound() {
     // Arrange
-    when(priceApiGateway.fetchPrice("unknown")).thenReturn(Optional.empty());
     shoppingCart.addProduct("unknown", 1);
+    Map<String, BigDecimal> emptyPriceMap = Map.of();
 
     // Act & Assert
-    InvalidProductException exception =
-        assertThrows(InvalidProductException.class, () -> shoppingCart.getState());
+    IllegalStateException exception =
+        assertThrows(IllegalStateException.class, () -> shoppingCart.calculateState(emptyPriceMap));
 
-    // Fixed string check to align with the core domain message layout
-    assertTrue(exception.getMessage().contains("Invalid or unrecognized product:unknown"));
+    assertTrue(exception.getMessage().contains("Missing price definition for product: unknown"));
   }
 
   @Test
   @DisplayName("Boundary Math Condition — Should enforce strict HALF_UP rounding rules on complex decimals")
   void shouldEnforceStrictHalfUpRoundingOnComplexDecimals() {
-    // Arrange: Mock an uneven fractional price (e.g., $2.525 which should round up to $2.53)
-    when(priceApiGateway.fetchPrice("cornflakes")).thenReturn(Optional.of(new BigDecimal("2.525")));
-    // Mock tax calculation behavior to simply return 0.00 to isolate subtotal verification
-    when(taxStrategy.calculateTax(any(BigDecimal.class))).thenReturn(new BigDecimal("0.00"));
-
+    // Arrange: Pass an uneven fractional price ($2.525 which should round up to $2.53 per unit)
     shoppingCart.addProduct("cornflakes", 1);
+    Map<String, BigDecimal> priceMap = Map.of("cornflakes", new BigDecimal("2.525"));
 
     // Act
-    CartState state = shoppingCart.getState();
+    CartState state = shoppingCart.calculateState(priceMap);
 
-    // Assert: Verify value rounds exactly up to 2.53
+    // Assert: Verify value rounds exactly up to 2.53 for a single unit subtotal
     assertEquals(new BigDecimal("2.53"), state.subtotal());
-    assertEquals(new BigDecimal("2.53"), state.total());
-  }
-
-  private BigDecimal any(Class<BigDecimal> type) {
-    return org.mockito.ArgumentMatchers.any(type);
+    assertEquals(new BigDecimal("0.32"), state.tax()); // 12.5% of 2.53 = 0.31625 -> 0.32
+    assertEquals(new BigDecimal("2.85"), state.total()); // 2.53 + 0.32 = 2.85
   }
 }
