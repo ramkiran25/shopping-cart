@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Bean;
 
 import java.net.http.HttpClient;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.shoppingcart", "com.controller", "com.api"})
 public class ShoppingCartApplication {
 
   public static void main(String[] args) {
