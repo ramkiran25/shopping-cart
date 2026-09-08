@@ -4,18 +4,7 @@ A production-grade, stateful shopping cart backend platform built using **Java 1
 
 The architecture separates the core business domain model from side-effect-heavy external network infrastructure layer boundaries. The platform orchestrates real-time product data lookup via a remote REST Pricing API and executes precise financial accounting routines natively leveraging `BigDecimal` with strict rounding controls.
 
----
 
-## Technical Enhancements & Architecture Pivot
-
-Based on production-focused code evaluation parameters, the codebase underwent a major architectural refactoring to remove technical debt and over-engineered abstractions:
-
-1. **Pure Domain Model Pattern:** The `ShoppingCart` was completely decoupled from network I/O. It no longer holds infrastructure dependencies or directly invokes remote HTTP calls inside state-generation loops. It functions as a pure mathematical and state-mutation entity that accepts pre-hydrated pricing definitions deterministically.
-2. **YAGNI Alignment (Removal of Fluff):** Extraneous abstractions that added unrequested complexity—such as multi-tiered tax strategy interfaces (`TaxCalculationStrategy`, `VatTaxStrategy`, `TaxExemptStrategy`) and premature local caching layers (`@Cacheable`, `ProductManagementService`)—were stripped out to maintain a clean, maintainable, and highly targeted codebase.
-3. **True Inversion of Control (IoC):** Manual object instantiation chains (`new HttpPriceApiGateway(...)`) inside controller layers were replaced with framework-managed Dependency Injection (DI) beans via standard constructor wiring.
-4. **Resilient Network & Error Handling:** The manual regex-based JSON text extraction logic was completely removed in favor of standard, resilient Jackson data mapping. Upstream failure profiles are now categorized into explicit custom exception boundaries (`ProductNotFoundException` vs. `UpstreamDependencyException`) to match professional API standards.
-
----
 
 ## System Component Layout
 

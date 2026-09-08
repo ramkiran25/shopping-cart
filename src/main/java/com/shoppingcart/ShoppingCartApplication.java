@@ -15,12 +15,12 @@ public class ShoppingCartApplication {
   }
 
   @Bean
-  public HttpClient httpClient() {
+  HttpClient httpClient() {
     return HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
   }
 
   @Bean
-  public ObjectMapper objectMapper() {
+  ObjectMapper objectMapper() {
     return new ObjectMapper();
   }
 }
